@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  web:
+    container_name: tutorial-web
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    ports:
+      - "${WEB_PORTS:-80}:80"
+      - "${NODE_PORTS:-3000}:3000"
+    depends_on:
+      - postgresql
+      - mariadb
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - internal
+
+
+  postgresql:
+    image: postgres:11.7
+    container_name: tutorial-postgres-db
+    environment:
+      TZ: 'Asia/Tokyo'
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_DATABASE}"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./docker/postgres/db_data:/var/lib/postgresql/data
+      - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./docker/postgres/postgresql.auto.conf:/var/lib/postgresql/data/postgresql.auto.conf
+    ports:
+      - '${POSTGRESQL_PORT:-5432}:5432'
+    networks:
+      - internal
+
+  mariadb:
+    image: mariadb
+    volumes:
+      - ./docker/mariadb/db_data:/var/lib/mysql
+      - ./docker/mariadb/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - '${MARIADB_PORT:-3306}:3306'
+    environment:
+      MARIADB_DATABASE: '${DB_DATABASE}'
+      MARIADB_ROOT_PASSWORD: '${DB_PASSWORD}'
+      TZ: '${TZ}'
+    networks:
+      - internal
+
+
+networks:
+  internal:
